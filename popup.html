@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="assets/icon128.png" alt="Logo">
+                <h1>Extension</h1>
+            </div>
+        </header>
+        <main>
+        <!-- Command Input Section -->
+        <section class="command-input">
+            <label for="commandBox">Enter Your Command:</label>
+            <textarea
+            id="commandBox"
+            rows="4"
+            placeholder="e.g., change background to soft blue, enlarge text, hide images, enable high contrast..."
+            ></textarea>
+        </section>
+
+        <!-- Quick Command Buttons -->
+        <section class="command-shortcuts">
+            <h3>Quick Actions:</h3>
+            <ul>
+            <li>
+                <button class="shortcut-btn" data-command="change background to light blue">
+                Light Background
+                </button>
+            </li>
+            <li>
+                <button class="shortcut-btn" data-command="increase font size">
+                Bigger Text
+                </button>
+            </li>
+            <li>
+                <button class="shortcut-btn" data-command="hide images">
+                Hide Images
+                </button>
+            </li>
+            <li>
+                <button class="shortcut-btn" data-command="dark mode">
+                Dark Mode
+                </button>
+            </li>
+            <li>
+                <button class="shortcut-btn" data-command="high contrast">
+                High Contrast
+                </button>
+            </li>
+            <li>
+                <button class="shortcut-btn" data-command="reset page">
+                Reset All
+                </button>
+            </li>
+            </ul>
+        </section>
+
+        <!-- Action Buttons -->
+        <section class="action-controls">
+            <button id="applyBtn">Apply ✨</button>
+            <button id="resetBtn">Reset 🔄</button>
+        </section>
+
+        <!-- Status Message -->
+        <div id="statusBox" class="status hidden">
+            <span id="statusText"></span>
+            <div class="loader hidden" aria-hidden="true"></div>
+        </div>
+        </main>
+    </div>
+</body>
+</html>
