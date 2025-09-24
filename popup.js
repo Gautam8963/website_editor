@@ -14,5 +14,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    
-})
+    resetButton.addEventListener("click", () => {
+        executeCommand("reset page");
+    });
+
+    applyButton.addEventListener("click", () => {
+        const commandText = commandInput.value.trim();
+        if (!commandText) {
+            showStatus("Please enter a command.", "error");
+            return;
+        }
+        executeCommand(commandText);
+    });
+
+    function executeCommand(commandText) {
+        showLoading();
+        const instruction = parseCommand(commandText);
+
+        if (!instruction) {
+            showStatus('Command not recognized. Try "change background to blue" or "increase font size"', "error");
+            return;
+        }
+
+
+}
