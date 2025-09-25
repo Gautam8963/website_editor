@@ -1,11 +1,24 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.    commandButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            try {
+                const command = btn.getAttribute('data-command');
+                if (!command) {
+                    showStatus('Error: Invalid command button', 'error');
+                    return;
+                }
+                executeCommand(command);
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        });
+    });ntListener("DOMContentLoaded", () => {
     const commandInput = document.getElementById("commandInput");
     const applyButton = document.getElementById("applyButton");
     const resetButton = document.getElementById("resetButton");
     const statusMessage = document.getElementById("statusMessage");
     const statusText = document.getElementById("statusText");
     const loader = document.querySelector(".loader");
-    const commandButtons = document.querySelectorAll(".command-btn");
+    const commandButtons = document.querySelectorAll(".shortcut-btn");
 
     commandButtons.forEach(btn => {
         btn.addEventListener("click",() => {
@@ -29,14 +42,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function executeCommand(commandText) {
         showLoading();
-        const instruction = parseCommand(commandText);
+        try {
+            const instruction = parseCommand(commandText);
 
-        if (!instruction) {
+            if (!instruction) {
+                showStatus('Invalid command. Please try again.', 'error');
+                return;
+            }
             showStatus('Command not recognized. Try "change background to blue" or "increase font size"', "error");
             return;
         }
 
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (chrome.runtime.lastError) {
+                showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
+                return;
+            }
+            if (!tabs || !tabs[0]) {
+                showStatus('Error: No active tab found', 'error');
+                return;
+            }
+
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: pageModifierFunction,
+                args: [instruction]
+            }).then(result => {
+                if (chrome.runtime.lastError) {
+                    showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
+                    return;
+                }
+                if (!result || !result[0]) {
+                    showStatus('Error: Failed to execute command', 'error');
+                    return;
+                }
+
+                const response = result[0].result;
+                if (response.error) {
+                    showStatus('Error: ' + response.error, 'error');
+                } else if (response.success) {
+                    showStatus(response.message || 'Changes applied successfully!', 'success');
+                }
+            }).catch(error => {
+                showStatus('Error: ' + (error.message || 'Failed to execute command'), 'error');
+            });
             if (chrome.runtime.lastError) {
                 showStatus("Error accessing current tab: " + chrome.runtime.lastError.message, "error");
                 return;
@@ -202,33 +251,31 @@ function pageModifierFunction(instruction) {
 
     function applyStyle(selector, property, value, important = false) {
         try {
-            if (important) {
-                const styleId = "webmodifier-custom-style";
-                let styleEl = document.getElementById(styleId);
-                if (!styleEl) {
-                    styleEl = document.createElement("style");
-                    styleEl.id = styleId;
-                    document.head.appendChild(styleEl);
-                }
-
-                let newContent = "";
-                if (property === "backgroundColor") {
-                    newContent = `${selector} { background-color: ${value} !important; }`;
-                    newContent += `\n${selector} { color: initial !important; }`;
-                } else if (property === "color") {
-                    newContent = `${selector} { color: ${value} !important; }`;
-                    newContent += `\n${selector} { background-color: initial !important; }`;
-                } else {
-                    newContent = `${selector} { ${property}: ${value} !important; }`;
-                }
-                styleEl.textContent = newContent;
-            } else {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(el => {
-                    el.style[property] = value;
-                });
+            const elements = document.querySelectorAll(selector);
+            if (elements.length === 0) {
+                return { error: `No elements found matching selector: ${selector}` };
             }
-            return { success: true, message: "Applied style to selected elements" };
+
+            const styleSheet = document.getElementById('webmodifier-custom-style');
+            if (!styleSheet) {
+                const style = document.createElement('style');
+                style.id = 'webmodifier-custom-style';
+                document.head.appendChild(style);
+            }
+
+            const importantFlag = important ? ' !important' : '';
+            const rule = `${selector} { ${property}: ${value}${importantFlag}; }`;
+
+            try {
+                if (styleSheet) {
+                    styleSheet.sheet.insertRule(rule, styleSheet.sheet.cssRules.length);
+                } else {
+                    document.getElementById('webmodifier-custom-style').textContent += rule;
+                }
+                return { success: true, message: `Style ${property} applied successfully` };
+            } catch (cssError) {
+                return { error: `Invalid CSS: ${cssError.message}` };
+            }
         } catch (error) {
             return { error: `Failed to apply style: ${error.message}` };
         }
