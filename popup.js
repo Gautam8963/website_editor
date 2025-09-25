@@ -1,17 +1,4 @@
-document.    commandButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            try {
-                const command = btn.getAttribute('data-command');
-                if (!command) {
-                    showStatus('Error: Invalid command button', 'error');
-                    return;
-                }
-                executeCommand(command);
-            } catch (error) {
-                showStatus('Error: ' + error.message, 'error');
-            }
-        });
-    });ntListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
     const commandInput = document.getElementById("commandInput");
     const applyButton = document.getElementById("applyButton");
     const resetButton = document.getElementById("resetButton");
@@ -46,70 +33,47 @@ document.    commandButtons.forEach(btn => {
             const instruction = parseCommand(commandText);
 
             if (!instruction) {
-                showStatus('Invalid command. Please try again.', 'error');
-                return;
-            }
-            showStatus('Command not recognized. Try "change background to blue" or "increase font size"', "error");
-            return;
-        }
-
-                        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (chrome.runtime.lastError) {
-                showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
-                return;
-            }
-            if (!tabs || !tabs[0]) {
-                showStatus('Error: No active tab found', 'error');
+                showStatus('Command not recognized. Try "change background to blue" or "increase font size"', "error");
                 return;
             }
 
-            chrome.scripting.executeScript({
-                target: { tabId: tabs[0].id },
-                func: pageModifierFunction,
-                args: [instruction]
-            }).then(result => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 if (chrome.runtime.lastError) {
                     showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
                     return;
                 }
-                if (!result || !result[0]) {
-                    showStatus('Error: Failed to execute command', 'error');
+                if (!tabs || !tabs[0]) {
+                    showStatus('Error: No active tab found', 'error');
                     return;
                 }
 
-                const response = result[0].result;
-                if (response.error) {
-                    showStatus('Error: ' + response.error, 'error');
-                } else if (response.success) {
-                    showStatus(response.message || 'Changes applied successfully!', 'success');
-                }
-            }).catch(error => {
-                showStatus('Error: ' + (error.message || 'Failed to execute command'), 'error');
-            });
-            if (chrome.runtime.lastError) {
-                showStatus("Error accessing current tab: " + chrome.runtime.lastError.message, "error");
-                return;
-            }
-
-            if (tabs && tabs.length > 0) {
-                const tabId = tabs[0].id;
                 chrome.scripting.executeScript({
-                    target: { tabId: tabId },
+                    target: { tabId: tabs[0].id },
                     func: pageModifierFunction,
-                    args: [instruction],
-                }, (results) => {
+                    args: [instruction]
+                }).then(result => {
                     if (chrome.runtime.lastError) {
-                        showStatus("Error applying changes: " + chrome.runtime.lastError.message, "error");
-                    } else if (results && results[0] && results[0].result && results[0].result.error) {
-                        showStatus("Error during page modification: " + results[0].result.error, "error");
-                    } else {
-                        showStatus("Changes applied successfully!", "success");
+                        showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
+                        return;
                     }
+                    if (!result || !result[0]) {
+                        showStatus('Error: Failed to execute command', 'error');
+                        return;
+                    }
+
+                    const response = result[0].result;
+                    if (response.error) {
+                        showStatus('Error: ' + response.error, 'error');
+                    } else if (response.success) {
+                        showStatus(response.message || 'Changes applied successfully!', 'success');
+                    }
+                }).catch(error => {
+                    showStatus('Error: ' + (error.message || 'Failed to execute command'), 'error');
                 });
-            } else {
-                showStatus("No active tab found to apply changes.", "error");
-            }
-        });
+            });
+        } catch (error) {
+            showStatus('Error: ' + (error.message || 'An unexpected error occurred'), 'error');
+        }
     }
 
     function showLoading() {
